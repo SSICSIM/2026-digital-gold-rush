@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.crisis_note import NoteType, Priority
+from app.models.screen_time import ScreenTimeAction
 
 
 class HealthResponse(BaseModel):
@@ -127,3 +128,75 @@ class AnalyticsSummary(BaseModel):
     priority_distribution: list[PriorityCount]
     private_directive_count: int
     public_directive_count: int
+
+
+# ── Screen Time ──────────────────────────────────────────────────────────────
+
+class ScreenTimeEventCreate(BaseModel):
+    # One action can affect several companies (the Update panel's "Affected
+    # Delegates" is multi-select); one event row is created per company.
+    character_ids: list[int] = Field(min_length=1)
+    crisis_note_id: int
+    action_type: ScreenTimeAction
+    # Signed hours: positive = increase, negative = decrease. Never zero.
+    delta: float
+
+    @field_validator("delta")
+    @classmethod
+    def _delta_nonzero(cls, v: float) -> float:
+        if v == 0:
+            raise ValueError("delta must not be zero")
+        return v
+
+
+class ScreenTimeEventUpdate(BaseModel):
+    action_type: ScreenTimeAction | None = None
+    delta: float | None = None
+
+    @field_validator("delta")
+    @classmethod
+    def _delta_nonzero(cls, v: float | None) -> float | None:
+        if v is not None and v == 0:
+            raise ValueError("delta must not be zero")
+        return v
+
+
+class ScreenTimeEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    character_id: int
+    period_id: int
+    crisis_note_id: int
+    action_type: ScreenTimeAction
+    delta: float
+    created_at: datetime
+    reverted_at: datetime | None
+
+
+class ScreenTimeLastChange(BaseModel):
+    event_id: int
+    delta: float
+    action_type: ScreenTimeAction
+    changed_at: datetime
+
+
+class ScreenTimeBar(BaseModel):
+    character_id: int
+    name: str
+    # Current screen time in hours (starting value + all live events).
+    current: float
+    # Value before the most recent live event (== current if there is none).
+    # The chart draws min(previous, current) in blue and the difference as a
+    # green (increase) or red (decrease) cap while the change is still recent.
+    previous: float
+    last_change: ScreenTimeLastChange | None
+
+
+class ScreenTimeSnapshot(BaseModel):
+    period_id: int
+    starting_hours: float
+    generated_at: datetime
+    bars: list[ScreenTimeBar]
+
+
