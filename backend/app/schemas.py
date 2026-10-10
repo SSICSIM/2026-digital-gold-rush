@@ -136,7 +136,7 @@ class ScreenTimeEventCreate(BaseModel):
     # One action can affect several companies (the Update panel's "Affected
     # Delegates" is multi-select); one event row is created per company.
     character_ids: list[int] = Field(min_length=1)
-    crisis_note_id: int
+    crisis_note_id: int | None = None  # optional for now
     action_type: ScreenTimeAction
     # Signed hours: positive = increase, negative = decrease. Never zero.
     delta: float
@@ -167,7 +167,7 @@ class ScreenTimeEventResponse(BaseModel):
     id: int
     character_id: int
     period_id: int
-    crisis_note_id: int
+    crisis_note_id: int | None
     action_type: ScreenTimeAction
     delta: float
     created_at: datetime
@@ -198,5 +198,3 @@ class ScreenTimeSnapshot(BaseModel):
     starting_hours: float
     generated_at: datetime
     bars: list[ScreenTimeBar]
-
-

@@ -27,15 +27,9 @@ def _active_period(db: Session) -> CrisisPeriod:
 
 
 @router.get("/snapshot", response_model=ScreenTimeSnapshot)
-def get_snapshot(
-    period_id: int | None = Query(None),
-    db: Session = Depends(get_db),
-) -> ScreenTimeSnapshot:
-    if period_id is None:
-        period_id = _active_period(db).id
-    elif not db.get(CrisisPeriod, period_id):
-        raise HTTPException(status_code=404, detail="Period not found.")
-    return build_snapshot(db, period_id)
+def get_snapshot(db: Session = Depends(get_db)) -> ScreenTimeSnapshot:
+    # Cumulative across all periods; archiving a period does not reset the chart.
+    return build_snapshot(db, _active_period(db).id)
 
 
 @router.get("/events", response_model=list[ScreenTimeEventResponse])
@@ -45,9 +39,9 @@ def list_events(
     include_reverted: bool = Query(False),
     db: Session = Depends(get_db),
 ) -> list[ScreenTimeEvent]:
-    if period_id is None:
-        period_id = _active_period(db).id
-    query = db.query(ScreenTimeEvent).filter(ScreenTimeEvent.period_id == period_id)
+    query = db.query(ScreenTimeEvent)
+    if period_id is not None:
+        query = query.filter(ScreenTimeEvent.period_id == period_id)
     if character_id is not None:
         query = query.filter(ScreenTimeEvent.character_id == character_id)
     if not include_reverted:
@@ -65,14 +59,19 @@ def create_events(
 ) -> list[ScreenTimeEvent]:
     period = _active_period(db)
 
-    note = db.get(CrisisNote, body.crisis_note_id)
-    if not note:
-        raise HTTPException(status_code=404, detail="Crisis note not found.")
-    if note.period_id != period.id:
-        raise HTTPException(
-            status_code=422,
-            detail="That crisis note belongs to a different period than the active one.",
-        )
+    # The note is optional; if one is supplied it must exist and belong to the
+    # active period.
+    note_id: int | None = None
+    if body.crisis_note_id is not None:
+        note = db.get(CrisisNote, body.crisis_note_id)
+        if not note:
+            raise HTTPException(status_code=404, detail="Crisis note not found.")
+        if note.period_id != period.id:
+            raise HTTPException(
+                status_code=422,
+                detail="That crisis note belongs to a different period than the active one.",
+            )
+        note_id = note.id
 
     character_ids = list(dict.fromkeys(body.character_ids))  # dedupe, keep order
     found = {
@@ -86,7 +85,7 @@ def create_events(
         ScreenTimeEvent(
             character_id=cid,
             period_id=period.id,
-            crisis_note_id=note.id,
+            crisis_note_id=note_id,
             action_type=body.action_type,
             delta=body.delta,
         )

@@ -44,9 +44,10 @@ class ScreenTimeEvent(Base):
     period_id: Mapped[int] = mapped_column(
         ForeignKey("crisis_periods.id", ondelete="RESTRICT"), nullable=False
     )
-    # Every action must be backed by a crisis note (per the PDR).
-    crisis_note_id: Mapped[int] = mapped_column(
-        ForeignKey("crisis_notes.id", ondelete="CASCADE"), nullable=False
+    # Optional link to the crisis note that justifies this change. Deleting
+    # the note keeps the event (and the graph) intact and just clears the link.
+    crisis_note_id: Mapped[int | None] = mapped_column(
+        ForeignKey("crisis_notes.id", ondelete="SET NULL"), nullable=True
     )
     action_type: Mapped[ScreenTimeAction] = mapped_column(
         SAEnum(ScreenTimeAction, name="screen_time_action_enum"), nullable=False
@@ -62,4 +63,4 @@ class ScreenTimeEvent(Base):
 
     character: Mapped[Character] = relationship("Character")
     period: Mapped[CrisisPeriod] = relationship("CrisisPeriod")
-    crisis_note: Mapped[CrisisNote] = relationship("CrisisNote")
+    crisis_note: Mapped[CrisisNote | None] = relationship("CrisisNote")

@@ -14,14 +14,15 @@ STARTING_HOURS = 10.0
 
 
 def build_snapshot(db: Session, period_id: int) -> ScreenTimeSnapshot:
-    """Derive each company's current bar from the event log for a period."""
+    """Derive each company's current bar from the full event log.
+
+    Screen time accumulates across the whole committee, so events from every
+    period count. period_id is only reported back as the currently active
+    period; it is not used to filter."""
     characters = db.query(Character).order_by(Character.name).all()
     events = (
         db.query(ScreenTimeEvent)
-        .filter(
-            ScreenTimeEvent.period_id == period_id,
-            ScreenTimeEvent.reverted_at.is_(None),
-        )
+        .filter(ScreenTimeEvent.reverted_at.is_(None))
         .order_by(ScreenTimeEvent.created_at, ScreenTimeEvent.id)
         .all()
     )

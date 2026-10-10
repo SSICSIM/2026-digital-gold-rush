@@ -16,10 +16,15 @@ export function Navbar() {
           <Link href="/" className="text-sm font-semibold tracking-tight">
             Crisis Tracker
           </Link>
-          <Button variant="outline" size="sm" onClick={() => setCharOpen(true)}>
-            <Users className="mr-2 h-4 w-4" />
-            Characters
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/screen-time">Screen Time</Link>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setCharOpen(true)}>
+              <Users className="mr-2 h-4 w-4" />
+              Characters
+            </Button>
+          </div>
         </div>
       </header>
       <CharacterManagerDialog open={charOpen} onOpenChange={setCharOpen} />
