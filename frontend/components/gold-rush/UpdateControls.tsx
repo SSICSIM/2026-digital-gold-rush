@@ -76,7 +76,7 @@ export function UpdateControls({ bars, periodId }: Props) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 flex-1 space-y-3">
       <form onSubmit={submit} className="flex flex-wrap items-center gap-3">
         <Button type="submit" variant="secondary" disabled={!valid || create.isPending}>
           Update
@@ -221,7 +221,7 @@ export function UpdateControls({ bars, periodId }: Props) {
       </div>
 
       {recent.length > 0 && (
-        <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+        <div className="text-muted-foreground flex max-h-16 flex-wrap items-center gap-x-4 gap-y-1 overflow-y-auto text-xs">
           <span className="font-medium">Recent:</span>
           {recent.map((ev) => (
             <span key={ev.id} className="inline-flex items-center gap-1">
