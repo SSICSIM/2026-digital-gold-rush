@@ -3,6 +3,17 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, Undo2 } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -11,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useNotes } from "@/hooks/useCrisisNotes";
 import {
   useCreateScreenTimeEvents,
+  useResetScreenTime,
   useRevertScreenTimeEvent,
   useScreenTimeEvents,
 } from "@/hooks/useScreenTime";
@@ -33,6 +45,7 @@ export function UpdateControls({ bars, periodId }: Props) {
   const { data: recent = [] } = useScreenTimeEvents(5);
   const create = useCreateScreenTimeEvents();
   const revert = useRevertScreenTimeEvent();
+  const reset = useResetScreenTime();
 
   const names = useMemo(() => new Map(bars.map((b) => [b.character_id, b.name])), [bars]);
 
@@ -145,6 +158,67 @@ export function UpdateControls({ bars, periodId }: Props) {
           ))}
         </NativeSelect>
       </form>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-muted-foreground text-xs font-medium">Reset:</span>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={selected.length !== 1 || reset.isPending}
+              title={selected.length === 1 ? undefined : "Select exactly one company above"}
+            >
+              {selected.length === 1
+                ? `Reset ${names.get(selected[0]) ?? "company"}`
+                : "Reset selected company"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset {names.get(selected[0] ?? -1)}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This sends {names.get(selected[0] ?? -1)} back to the starting hours. The history is
+                kept in the database.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => reset.mutate(selected[0], { onSuccess: () => setSelected([]) })}
+              >
+                Reset company
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" variant="destructive" size="sm" disabled={reset.isPending}>
+              Reset all
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset all {bars.length} companies?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Every company goes back to the starting hours. The history is kept in the database,
+                but this can&apos;t be undone with one click.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={() => reset.mutate(undefined)}>
+                Reset all
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
 
       {recent.length > 0 && (
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">

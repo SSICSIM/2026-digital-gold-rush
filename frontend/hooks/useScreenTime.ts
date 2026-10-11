@@ -51,3 +51,17 @@ export function useRevertScreenTimeEvent() {
     onError: (err: Error) => toast.error(err.message || "Failed to revert."),
   });
 }
+
+export function useResetScreenTime() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (characterId?: number) => screenTimeService.reset(characterId),
+    onSuccess: ({ reverted }) => {
+      qc.invalidateQueries({ queryKey: ["screen-time"] });
+      toast.success(
+        reverted === 0 ? "Nothing to reset." : `Reset complete (${reverted} change${reverted === 1 ? "" : "s"} reverted).`,
+      );
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to reset."),
+  });
+}

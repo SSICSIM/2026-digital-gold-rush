@@ -126,3 +126,26 @@ def revert_event(event_id: int, db: Session = Depends(get_db)) -> ScreenTimeEven
     db.commit()
     db.refresh(event)
     return event
+
+
+@router.post("/reset")
+def reset_screen_time(
+    character_id: int | None = Query(None),
+    db: Session = Depends(get_db),
+) -> dict[str, int]:
+    """Soft-reset: revert every live event (all companies, or just one).
+
+    Rows are kept (reverted_at is set), so history stays auditable and every
+    bar returns to the starting hours."""
+    query = db.query(ScreenTimeEvent).filter(ScreenTimeEvent.reverted_at.is_(None))
+    if character_id is not None:
+        if not db.get(Character, character_id):
+            raise HTTPException(status_code=404, detail="Character not found.")
+        query = query.filter(ScreenTimeEvent.character_id == character_id)
+    now = datetime.now(timezone.utc)
+    count = 0
+    for ev in query.all():
+        ev.reverted_at = now
+        count += 1
+    db.commit()
+    return {"reverted": count}

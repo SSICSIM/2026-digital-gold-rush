@@ -18,4 +18,10 @@ export const screenTimeService = {
 
   revertEvent: (id: number) =>
     apiClient.post<ScreenTimeEventResponse>(`/api/screen-time/events/${id}/revert`, {}),
+
+  reset: (characterId?: number) =>
+    apiClient.post<{ reverted: number }>(
+      `/api/screen-time/reset${characterId ? `?character_id=${characterId}` : ""}`,
+      {},
+    ),
 };
