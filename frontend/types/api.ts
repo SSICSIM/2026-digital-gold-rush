@@ -120,3 +120,48 @@ export interface AnalyticsSummary {
   private_directive_count: number;
   public_directive_count: number;
 }
+
+// ── Screen Time ───────────────────────────────────────────────────────────────
+
+export type ScreenTimeAction = "LOBBYING" | "CARTEL" | "RESEARCH" | "ROCKET_DOCKET" | "OTHER";
+
+export interface ScreenTimeLastChange {
+  event_id: number;
+  delta: number;
+  action_type: ScreenTimeAction;
+  changed_at: string;
+}
+
+export interface ScreenTimeBar {
+  character_id: number;
+  name: string;
+  current: number;
+  previous: number;
+  last_change: ScreenTimeLastChange | null;
+}
+
+export interface ScreenTimeSnapshot {
+  period_id: number;
+  starting_hours: number;
+  generated_at: string;
+  bars: ScreenTimeBar[];
+}
+
+export interface ScreenTimeEventResponse {
+  id: number;
+  character_id: number;
+  period_id: number;
+  crisis_note_id: number | null;
+  action_type: ScreenTimeAction;
+  delta: number;
+  created_at: string;
+  reverted_at: string | null;
+}
+
+export interface ScreenTimeEventCreate {
+  character_ids: number[];
+  crisis_note_id?: number | null;
+  action_type: ScreenTimeAction;
+  delta: number;
+}
+
